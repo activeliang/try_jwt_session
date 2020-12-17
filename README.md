@@ -9,19 +9,22 @@
 
 ```
 # first login
-tokens = JSON.parse RestClient.post 'http://localhost:3000/login', name: 'user1', password: '123456'
+@tokens = JSON.parse RestClient.post 'http://localhost:3000/login', name: 'user1', password: '123456'
+
+def refresh_access_and_get_posts
+  new_tokens = JSON.parse RestClient.post 'http://localhost:3000/refresh', {}, { 'X-Refresh-Token': @tokens['tokens']['refresh'] }
+  posts = JSON.parse RestClient.get 'http://localhost:3000/posts', { Authorization: "Bearer #{new_tokens['access']}"}
+end
 
 # it works normal
 10.times {
-  new_tokens = JSON.parse RestClient.post 'http://localhost:3000/refresh', {}, { 'X-Refresh-Token': tokens['tokens']['refresh'] }
-  posts = JSON.parse RestClient.get 'http://localhost:3000/posts', { Authorization: "Bearer #{new_tokens['access']}"}
+  refresh_access_and_get_posts
 }
 
 # 401 will be returned when get posts
 10.times{
   Thread.new {
-    new_tokens = JSON.parse RestClient.post 'http://localhost:3000/refresh', {}, { 'X-Refresh-Token': tokens['tokens']['refresh'] }
-    posts = JSON.parse RestClient.get 'http://localhost:3000/posts', { Authorization: "Bearer #{new_tokens['access']}"}
+    refresh_access_and_get_posts
   }
 }
 ```
